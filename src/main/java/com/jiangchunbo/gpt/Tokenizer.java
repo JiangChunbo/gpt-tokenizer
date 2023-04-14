@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,28 +47,28 @@ public class Tokenizer {
 
 
     static {
-        try (InputStream inputStream = Tokenizer.class.getResourceAsStream("encoder.json");) {
+        try (InputStream inputStream = Tokenizer.class.getResourceAsStream("encoder.json")) {
             if (inputStream != null) {
-                byte[] bytes = new byte[inputStream.available()];
-                int read = inputStream.read(bytes);
-                encoder = JSONObject.parseObject(new String(bytes, StandardCharsets.UTF_8));
+                Scanner scanner = new Scanner(inputStream, "UTF-8").useDelimiter("\\A");
+                String fileContent = scanner.hasNext() ? scanner.next() : "";
+                encoder = JSONObject.parseObject(fileContent);
             } else {
                 encoder = new JSONObject();
             }
         } catch (IOException e) {
-            encoder = new JSONObject();
+            throw new RuntimeException(e);
         }
-        // 读取字节对 文件，其中每一行都是由两个部分组成，部分之间由空格分开
+
         String bpe_file = "";
-        try (InputStream inputStream = Tokenizer.class.getResourceAsStream("vocab.bpe");) {
+        try (InputStream inputStream = Tokenizer.class.getResourceAsStream("vocab.bpe")) {
             if (inputStream != null) {
-                byte[] bytes = new byte[inputStream.available()];
-                int read = inputStream.read(bytes);
-                bpe_file = new String(bytes, StandardCharsets.UTF_8);
+                Scanner scanner = new Scanner(inputStream, "UTF-8").useDelimiter("\\A");
+                bpe_file = scanner.hasNext() ? scanner.next() : "";
             }
         } catch (IOException e) {
-            log.error("Gpt Token Encoder 出错: ", e);
+            throw new RuntimeException(e);
         }
+
 
         // lines: bpe 文件由 \n 分隔的字符串
         String[] lines = bpe_file.split("\n");
